@@ -157,7 +157,7 @@
 /* ---- Config ---- */
 const FAIL_SFX_PATH = "soundeffect.mp3";   // Zet je soundeffect.mp3 in dezelfde map
 const SIPS_PER_CAN  = 24;                  // 24 slokken per “biertje”
-const FAIL_MESSAGE  = "Oef… verkeerde keuze."; // Zet hier je eigen tekst als je wilt
+const FAIL_MESSAGE  = "Oef… verkeerde keuze."; // Zet hier je eigen tekst
 
 /* ---- Data ---- */
 const COUNTRIES = [
@@ -181,6 +181,29 @@ const COUNTRIES = [
   {name:"Liberia", iso:"LR"}, {name:"Honduras", iso:"HN"}, {name:"Nicaragua", iso:"NI"}, {name:"Panama", iso:"PA"}
 ];
 
+/* ---- Eenvoudige kleur-tags per land (dominante vlagkleuren) ---- */
+/* NB: niet perfect-wetenschappelijk; genoeg voor leuke “look-alike” matchups. */
+const COLORS = {
+  NL:['red','white','blue'], BE:['black','yellow','red'], DE:['black','red','yellow'],
+  FR:['blue','white','red'], ES:['red','yellow'], IT:['green','white','red'], PT:['green','red','yellow'],
+  GB:['red','white','blue'], IE:['green','white','orange'], SE:['blue','yellow'], NO:['red','white','blue'],
+  FI:['blue','white'], PL:['white','red'], CZ:['red','white','blue'],
+  AT:['red','white'], CH:['red','white'], GR:['blue','white'], TR:['red','white'],
+  UA:['blue','yellow'], RU:['white','blue','red'], US:['red','white','blue'], CA:['red','white'],
+  MX:['green','white','red'], BR:['green','yellow','blue'], AR:['blue','white','yellow'], CL:['red','white','blue'],
+  CO:['yellow','blue','red'], PE:['red','white'], JP:['white','red'], KR:['white','red','blue','black'],
+  CN:['red','yellow'], IN:['orange','white','green','blue'], PK:['green','white'], BD:['green','red'],
+  ID:['red','white'], AU:['blue','white','red'], NZ:['blue','white','red'], ZA:['green','yellow','red','blue','black','white'],
+  EG:['red','white','black','gold'], MA:['red','green'], NG:['green','white'], KE:['black','red','green','white'],
+  GH:['red','yellow','green','black'], SA:['green','white'], AE:['red','green','white','black'],
+  QA:['maroon','white'], IL:['blue','white'], IR:['green','white','red'], IQ:['red','white','black','green'],
+  IS:['blue','white','red'], JM:['green','yellow','black'], XK:['blue','yellow'], TW:['red','white','blue'],
+  HK:['red','white'], SG:['red','white'], MY:['blue','yellow','red','white'], PH:['blue','red','white','yellow'],
+  VN:['red','yellow'], TH:['red','white','blue'], LK:['maroon','yellow','green','orange'],
+  ET:['green','yellow','red','blue'], DZ:['green','white','red'], TN:['red','white'], ZW:['green','yellow','red','black','white'],
+  LR:['red','white','blue'], HN:['blue','white'], NI:['blue','white'], PA:['red','white','blue']
+};
+
 /* ---- State ---- */
 let streak = 1;         // start op 1 zoals jouw vorige game
 let current = null;     // {iso, correct, left, right, side}
@@ -201,18 +224,37 @@ function rememberMainISO(iso){
 
 /* ---- Utils ---- */
 function rand(n){ return Math.floor(Math.random()*n); }
+function sample(arr){ return arr[arr.length ? rand(arr.length) : 0]; }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rand(i+1); [a[i],a[j]]=[a[j],a[i]]; } }
 function isoToFlag(iso){ const cc = iso.toUpperCase(); return String.fromCodePoint(...[...cc].map(c=>0x1F1E6 + (c.charCodeAt(0)-65))); }
 
-/* Pick hoofdland a met anti-herhaling binnen de laatste 10; b is willekeurig ≠ a */
-function pickPair(){
-  // Kandidaten voor hoofdvlag die NIET recent zijn
-  const candidates = COUNTRIES.filter(c => !recentMainSet.has(c.iso));
-  const pool = candidates.length ? candidates : COUNTRIES; // fallback als lijst te klein is
-  const a = pool[rand(pool.length)];
+/* Bepaal kandidaten met overlappende colortags */
+function similarCountries(iso){
+  const base = COLORS[iso] || [];
+  if(base.length===0) return [];
+  return COUNTRIES.filter(c=>{
+    if(c.iso===iso) return false;
+    const tags = COLORS[c.iso] || [];
+    return tags.some(t => base.includes(t));
+  });
+}
 
+/* Pick hoofdland a met anti-herhaling; b biased naar vergelijkbare kleuren */
+function pickPair(){
+  // a (hoofdvlag) zonder de laatste 10
+  const candidates = COUNTRIES.filter(c => !recentMainSet.has(c.iso));
+  const pool = candidates.length ? candidates : COUNTRIES;
+  const a = sample(pool);
+
+  // b (tegenstander): 75% kans vergelijkbaar, anders random ≠ a
   let b;
-  do{ b = COUNTRIES[rand(COUNTRIES.length)]; } while(b === a);
+  const similars = similarCountries(a.iso);
+  const useSimilar = (similars.length && Math.random() < 0.75);
+  if(useSimilar){
+    b = sample(similars);
+  }else{
+    do{ b = sample(COUNTRIES); } while(b.iso===a.iso);
+  }
 
   const leftIsCorrect = Math.random()<.5;
   return { iso:a.iso, correct:a.name, left:leftIsCorrect?a.name:b.name, right:leftIsCorrect?b.name:a.name, side:leftIsCorrect?"left":"right" };
@@ -254,8 +296,7 @@ function tryPlay(el){ const p = el.play(); if(p!==undefined){ p.catch(()=> gateB
 /* ---- Render ---- */
 function renderCard(){
   const next = pickPair();
-  // Onmiddellijk onthouden: nu kan deze iso 10 kaarten lang niet opnieuw hoofdvlag worden
-  rememberMainISO(next.iso);
+  rememberMainISO(next.iso); // hoofdvlag onthouden voor no-repeat
 
   current = next;
   flagEl.textContent = isoToFlag(current.iso);
@@ -310,8 +351,8 @@ function answer(side){
       window.removeEventListener('touchstart', dismiss, true);
       renderCard();
     };
-    // klik/tap overal sluit overlay
-    setTimeout(()=>{ // kleine safeguard zodat je niet per ongeluk meteen sluit
+    // klik/tap overal sluit overlay (kleine delay om accidental click te voorkomen)
+    setTimeout(()=>{ 
       window.addEventListener('click', dismiss, true);
       window.addEventListener('touchstart', dismiss, true);
     }, 150);
@@ -346,6 +387,9 @@ cardEl.addEventListener('pointerup', ()=>{
 });
 
 /* ---- Start & Gate ---- */
+const startOverlay = document.getElementById('startOverlay');
+const startBtn = document.getElementById('startBtn');
+const gateBtn = document.getElementById('gateBtn');
 startBtn.addEventListener('click', ()=>{
   startOverlay.style.display='none';
   updateGauge();
