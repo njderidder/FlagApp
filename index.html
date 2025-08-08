@@ -10,9 +10,8 @@
 <style>
   :root{
     --bg1:#f6f8fb; --bg2:#eef2f7;
-    --card:#ffffff; --ink:#0b1f17; --ink-sub:#415a4f; --muted:#6b7f76;
-    --accent:#0ea5e9; --accent-ink:#062032;
-    --good:#16a34a; --bad:#ef4444; --ring:#d9e6df;
+    --card:#ffffff; --ink:#0b1f17; --muted:#6b7f76;
+    --good:#16a34a; --bad:#ef4444;
     --btn:#f3f7f4; --btn-ink:#0c241c; --btn-border:#cfe0d8;
     --radius:18px; --ease:cubic-bezier(.2,.8,.2,1);
   }
@@ -31,9 +30,10 @@
   header{display:flex; align-items:center; justify-content:space-between; gap:12px}
   .title{font-weight:800; letter-spacing:.2px; font-size:22px}
 
-  .hud{display:flex; align-items:center; gap:16px}
+  .hud{display:flex; align-items:center; gap:14px}
+  .cans{display:flex; align-items:flex-end; gap:6px}
   .can{position:relative; width:22px; height:44px; border-radius:6px;
-    background:linear-gradient(180deg,#e7efe9,#dde9e3); box-shadow:inset 0 0 0 1px #b9cfc3;}
+    background:linear-gradient(180deg,#e7efe9,#dde9e3); box-shadow:inset 0 0 0 1px #b9cfc3; overflow:hidden}
   .fill{position:absolute; left:3px; right:3px; bottom:3px; height:0%;
     border-radius:4px; background:linear-gradient(180deg,#9ef6b2,#44d17a 70%,#22a65c);}
   .streak{font-weight:800; color:var(--muted)}
@@ -46,7 +46,9 @@
     display:grid; grid-template-rows:1fr auto; gap:16px; padding:28px;
     will-change:transform, opacity; user-select:none;
   }
-  .flag{font-size:min(20vmin,128px); filter:drop-shadow(0 6px 18px rgba(0,0,0,.06));}
+  .flag{font-size:min(20vmin,128px); display:grid; place-items:center; text-align:center;
+    filter:drop-shadow(0 6px 18px rgba(0,0,0,.06));}
+
   .choices{display:flex; gap:16px; justify-content:center; align-items:center}
   .btn{
     appearance:none; border:1px solid var(--btn-border);
@@ -54,30 +56,36 @@
     padding:16px 18px; border-radius:16px; font-weight:800; font-size:18px;
     min-width:220px; cursor:pointer;
     box-shadow:0 10px 30px rgba(0,0,0,.04);
-    transition:transform .08s var(--ease), box-shadow .12s var(--ease), border-color .12s;
+    transition:transform .08s var(--ease), box-shadow .12s var(--ease), border-color .12s, background .12s, color .12s;
   }
   .btn:hover{transform:translateY(-1px); box-shadow:0 14px 38px rgba(0,0,0,.06)}
   .btn:active{transform:translateY(1px) scale(.99)}
-  .btn.left{outline:0}
-  .btn.right{outline:0}
   .btn.correct{border-color:#86efac; box-shadow:0 10px 30px #22c55e22}
   .btn.wrong{border-color:#fecaca; box-shadow:0 10px 30px #ef444422}
 
   .badge{position:absolute; top:18px; padding:10px 12px; border-radius:12px; font-weight:900;
-    transform:scale(.9); opacity:0; pointer-events:none; mix-blend-mode:normal;}
-  .badge.left{left:18px; background:#dcfce7; color:var(--good); border:2px solid #86efac; transform:rotate(-3deg);}
+    transform:scale(.9); opacity:0; pointer-events:none;}
+  .badge.left{left:18px; background:#dcfce7; color:#16a34a; border:2px solid #86efac; transform:rotate(-3deg);}
   .badge.right{right:18px; background:#fee2e2; color:#ef4444; border:2px solid #fecaca; transform:rotate(3deg);}
 
   footer{display:flex; align-items:center; justify-content:center}
-  .keys{color:var(--muted); font-weight:600}
+  .keys{display:flex; gap:24px; align-items:center; font-weight:800}
+  .arrow{font-size:18px; display:flex; align-items:center; gap:8px}
+  .arrow.left{color:#dc2626}   /* rood */
+  .arrow.right{color:#16a34a}  /* groen */
 
-  /* Fail overlay */
+  /* Fail overlay (blijft staan tot klik/tap) */
   .fail-stage{position:fixed; inset:0; display:none; place-items:center;
     background:rgba(0,0,0,.55); z-index:9998; padding:24px}
-  .fail-box{display:flex; flex-direction:column; align-items:center; gap:14px}
+  .fail-box{display:flex; flex-direction:column; align-items:center; gap:12px}
+  .fail-pair{
+    width:min(92vw,560px);
+    color:#e7efe9; opacity:.95; font-size:15px; font-weight:800;
+    text-align:center; text-shadow:0 1px 4px rgba(0,0,0,.45)
+  }
   #failGif{max-width:min(92vw,520px); max-height:64vh; border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.6)}
-  .fail-text{font-weight:900; font-size:22px; color:#fafff7; text-shadow:0 2px 8px rgba(0,0,0,.5)}
-  .fail-count{font-size:42px; font-weight:900; color:#e6ff68; text-shadow:0 4px 10px rgba(0,0,0,.7)}
+  .fail-text{font-weight:900; font-size:20px; color:#fafff7; text-shadow:0 2px 8px rgba(0,0,0,.5)}
+  .fail-count{font-size:40px; font-weight:900; color:#e6ff68; text-shadow:0 4px 10px rgba(0,0,0,.7)}
 
   /* Start overlay & sound gate */
   #startOverlay{position:fixed; inset:0; display:grid; place-items:center; background:rgba(0,0,0,.6); z-index:10000}
@@ -86,19 +94,22 @@
   .gate{position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
     padding:10px 16px; background:#103a24; border-radius:999px; color:#d9ffdf; font-weight:800; z-index:10000; display:none}
 
+  /* Mobiel: knoppen onder elkaar, links rood, rechts groen */
   @media (max-width:520px){
     .card{height:64vh; padding:18px}
-    .btn{min-width:unset; width:100%; font-size:16px}
     .choices{flex-direction:column}
+    .btn{min-width:unset; width:100%; font-size:16px}
+    .btn.left{background:#fee2e2; border-color:#fecaca; color:#7f1d1d}
+    .btn.right{background:#dcfce7; border-color:#86efac; color:#064e3b}
   }
 </style>
 </head>
 <body>
 <div class="app" role="application">
   <header>
-    <div class="title">Flag Swipe <span style="color:var(--muted);font-weight:700">• Links/Rechts = land kiezen</span></div>
+    <div class="title">Flag Swipe</div>
     <div class="hud" aria-label="Streak">
-      <div class="can" aria-hidden="true"><div class="fill" id="fill"></div></div>
+      <div class="cans" id="cans"></div>
       <div class="streak"><span id="sipCount">0</span> slokken</div>
     </div>
   </header>
@@ -116,7 +127,10 @@
   </main>
 
   <footer>
-    <div class="keys">Tip: gebruik pijltjes ← →</div>
+    <div class="keys" aria-hidden="true">
+      <div class="arrow left">←</div>
+      <div class="arrow right">→</div>
+    </div>
   </footer>
 </div>
 
@@ -125,11 +139,12 @@
   <button class="cta" id="startBtn">Start</button>
 </div>
 
-<!-- Fail overlay -->
+<!-- Fail overlay (blijft staan tot klik/tap) -->
 <div class="fail-stage" id="failStage">
   <div class="fail-box">
+    <div class="fail-pair" id="failPair"></div>
     <img id="failGif" src="giphy.gif" alt="Fail animatie">
-    <div class="fail-text">Oef… verkeerde keuze.</div>
+    <div class="fail-text" id="failMsg"></div>
     <div class="fail-text">Totaal slokken deze streak:</div>
     <div class="fail-count" id="failCount">0</div>
   </div>
@@ -142,14 +157,14 @@
 /* ---- Config ---- */
 const FAIL_SFX_PATH = "soundeffect.mp3";   // Zet je soundeffect.mp3 in dezelfde map
 const SIPS_PER_CAN  = 24;                  // 24 slokken per “biertje”
+const FAIL_MESSAGE  = "Oef… verkeerde keuze."; // Zet hier je eigen tekst als je wilt
 
 /* ---- Data ---- */
 const COUNTRIES = [
-  // (name, iso) — gebruik ISO-3166-1 alpha-2
   {name:"Netherlands", iso:"NL"}, {name:"Belgium", iso:"BE"}, {name:"Germany", iso:"DE"},
   {name:"France", iso:"FR"}, {name:"Spain", iso:"ES"}, {name:"Italy", iso:"IT"}, {name:"Portugal", iso:"PT"},
   {name:"United Kingdom", iso:"GB"}, {name:"Ireland", iso:"IE"}, {name:"Sweden", iso:"SE"}, {name:"Norway", iso:"NO"},
-  {name:"Denmark", iso:"DK"}, {name:"Finland", iso:"FI"}, {name:"Poland", iso:"PL"}, {name:"Czech Republic", iso:"CZ"},
+  {name:"Finland", iso:"FI"}, {name:"Poland", iso:"PL"}, {name:"Czech Republic", iso:"CZ"},
   {name:"Austria", iso:"AT"}, {name:"Switzerland", iso:"CH"}, {name:"Greece", iso:"GR"}, {name:"Turkey", iso:"TR"},
   {name:"Ukraine", iso:"UA"}, {name:"Russia", iso:"RU"}, {name:"United States", iso:"US"}, {name:"Canada", iso:"CA"},
   {name:"Mexico", iso:"MX"}, {name:"Brazil", iso:"BR"}, {name:"Argentina", iso:"AR"}, {name:"Chile", iso:"CL"},
@@ -159,7 +174,7 @@ const COUNTRIES = [
   {name:"Egypt", iso:"EG"}, {name:"Morocco", iso:"MA"}, {name:"Nigeria", iso:"NG"}, {name:"Kenya", iso:"KE"},
   {name:"Ghana", iso:"GH"}, {name:"Saudi Arabia", iso:"SA"}, {name:"United Arab Emirates", iso:"AE"},
   {name:"Qatar", iso:"QA"}, {name:"Israel", iso:"IL"}, {name:"Iran", iso:"IR"}, {name:"Iraq", iso:"IQ"},
-  {name:"Norway", iso:"NO"}, {name:"Iceland", iso:"IS"}, {name:"Jamaica", iso:"JM"}, {name:"Kosovo", iso:"XK"},
+  {name:"Iceland", iso:"IS"}, {name:"Jamaica", iso:"JM"}, {name:"Kosovo", iso:"XK"},
   {name:"Taiwan", iso:"TW"}, {name:"Hong Kong", iso:"HK"}, {name:"Singapore", iso:"SG"}, {name:"Malaysia", iso:"MY"},
   {name:"Philippines", iso:"PH"}, {name:"Vietnam", iso:"VN"}, {name:"Thailand", iso:"TH"}, {name:"Sri Lanka", iso:"LK"},
   {name:"Ethiopia", iso:"ET"}, {name:"Algeria", iso:"DZ"}, {name:"Tunisia", iso:"TN"}, {name:"Zimbabwe", iso:"ZW"},
@@ -167,30 +182,54 @@ const COUNTRIES = [
 ];
 
 /* ---- State ---- */
-let streak = 1;         // start op 1 (zoals je vorige game)
-let current = null;     // {flag: iso, correctName, leftName, rightName, correctSide}
+let streak = 1;         // start op 1 zoals jouw vorige game
+let current = null;     // {iso, correct, left, right, side}
 let canInteract = false;
 let sfx = null;
+
+/* ---- Recent hoofdvlaggen (no-repeat window = 10) ---- */
+const recentMainISOs = [];     // queue
+const recentMainSet  = new Set();
+function rememberMainISO(iso){
+  recentMainISOs.push(iso);
+  recentMainSet.add(iso);
+  if(recentMainISOs.length > 10){
+    const old = recentMainISOs.shift();
+    if(!recentMainISOs.includes(old)) recentMainSet.delete(old);
+  }
+}
 
 /* ---- Utils ---- */
 function rand(n){ return Math.floor(Math.random()*n); }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rand(i+1); [a[i],a[j]]=[a[j],a[i]]; } }
-function isoToFlag(iso){ // ISO -> vlag emoji
-  const cc = iso.toUpperCase();
-  // XK (Kosovo) heeft ook een emoji in moderne sets; fallback naar 🇽🇰
-  return String.fromCodePoint(...[...cc].map(c=>0x1F1E6 + (c.charCodeAt(0)-65)));
-}
+function isoToFlag(iso){ const cc = iso.toUpperCase(); return String.fromCodePoint(...[...cc].map(c=>0x1F1E6 + (c.charCodeAt(0)-65))); }
+
+/* Pick hoofdland a met anti-herhaling binnen de laatste 10; b is willekeurig ≠ a */
 function pickPair(){
-  const a = COUNTRIES[rand(COUNTRIES.length)];
+  // Kandidaten voor hoofdvlag die NIET recent zijn
+  const candidates = COUNTRIES.filter(c => !recentMainSet.has(c.iso));
+  const pool = candidates.length ? candidates : COUNTRIES; // fallback als lijst te klein is
+  const a = pool[rand(pool.length)];
+
   let b;
   do{ b = COUNTRIES[rand(COUNTRIES.length)]; } while(b === a);
+
   const leftIsCorrect = Math.random()<.5;
-  return {
-    iso: a.iso, correct: a.name,
-    left: leftIsCorrect ? a.name : b.name,
-    right: leftIsCorrect ? b.name : a.name,
-    side: leftIsCorrect ? "left" : "right"
-  };
+  return { iso:a.iso, correct:a.name, left:leftIsCorrect?a.name:b.name, right:leftIsCorrect?b.name:a.name, side:leftIsCorrect?"left":"right" };
+}
+
+/* ---- Gauge (meerdere bierblikjes) ---- */
+const cansEl = document.getElementById('cans');
+const sipCountEl = document.getElementById('sipCount');
+function makeCan(percent){ const c=document.createElement('div'); c.className='can'; const f=document.createElement('div'); f.className='fill'; f.style.height=percent+'%'; c.appendChild(f); return c; }
+function updateGauge(){
+  cansEl.innerHTML="";
+  const total = streak;
+  const fullCans = Math.floor(total / SIPS_PER_CAN);
+  const remainder = total % SIPS_PER_CAN;
+  for(let i=0;i<fullCans;i++) cansEl.appendChild(makeCan(100));
+  cansEl.appendChild(makeCan((remainder===0 && total>0)?100:(remainder / SIPS_PER_CAN)*100));
+  sipCountEl.textContent = String(streak);
 }
 
 /* ---- UI refs ---- */
@@ -200,29 +239,25 @@ const rightBtn = document.getElementById('rightBtn');
 const cardEl = document.getElementById('card');
 const badgeL = cardEl.querySelector('.badge.left');
 const badgeR = cardEl.querySelector('.badge.right');
-const fillEl = document.getElementById('fill');
-const sipCountEl = document.getElementById('sipCount');
 const startOverlay = document.getElementById('startOverlay');
 const startBtn = document.getElementById('startBtn');
 const gateBtn = document.getElementById('gateBtn');
 const failStage = document.getElementById('failStage');
 const failCount = document.getElementById('failCount');
+const failPair = document.getElementById('failPair');
+const failMsg = document.getElementById('failMsg');
 
 /* ---- Sound ---- */
-function ensureSfx(){
-  if(!sfx){ sfx = new Audio(FAIL_SFX_PATH); sfx.preload="auto"; sfx.volume=1.0; }
-  return sfx;
-}
+function ensureSfx(){ if(!sfx){ sfx = new Audio(FAIL_SFX_PATH); sfx.preload="auto"; sfx.volume=1.0; } return sfx; }
 function tryPlay(el){ const p = el.play(); if(p!==undefined){ p.catch(()=> gateBtn.style.display='block'); }}
 
 /* ---- Render ---- */
-function updateGauge(){
-  const fullPct = Math.min(100, (streak % SIPS_PER_CAN || SIPS_PER_CAN) / SIPS_PER_CAN * 100);
-  fillEl.style.height = fullPct + '%';
-  sipCountEl.textContent = String(streak);
-}
 function renderCard(){
-  current = pickPair();
+  const next = pickPair();
+  // Onmiddellijk onthouden: nu kan deze iso 10 kaarten lang niet opnieuw hoofdvlag worden
+  rememberMainISO(next.iso);
+
+  current = next;
   flagEl.textContent = isoToFlag(current.iso);
   leftBtn.textContent = current.left;
   rightBtn.textContent = current.right;
@@ -257,15 +292,29 @@ function answer(side){
     setTimeout(()=>{ cardEl.style.transition=''; cardEl.style.opacity=1; cardEl.style.filter='none'; renderCard(); }, 190);
   }else{
     const prev = streak;
+    // Tekst bovenin + streak
+    const flagEmoji = isoToFlag(current.iso);
+    const chosenName = side==='left' ? current.left : current.right;
+    failPair.textContent = `Je koppelde ${flagEmoji} aan “${chosenName}” — correct was “${current.correct}”.`;
+    failMsg.textContent = FAIL_MESSAGE;
+
     streak = 1; updateGauge();
-    // Fail overlay + sound
+    // Laat overlay staan tot klik/tap
     try{ ensureSfx(); tryPlay(sfx); }catch(e){}
     failCount.textContent = String(prev);
     failStage.style.display='grid';
-    setTimeout(()=>{
+
+    const dismiss = () => {
       failStage.style.display='none';
+      window.removeEventListener('click', dismiss, true);
+      window.removeEventListener('touchstart', dismiss, true);
       renderCard();
-    }, 3500);
+    };
+    // klik/tap overal sluit overlay
+    setTimeout(()=>{ // kleine safeguard zodat je niet per ongeluk meteen sluit
+      window.addEventListener('click', dismiss, true);
+      window.addEventListener('touchstart', dismiss, true);
+    }, 150);
   }
 }
 
@@ -277,10 +326,9 @@ window.addEventListener('keydown', e=>{
   if(e.key==='ArrowRight') answer('right');
 });
 
-// Simple swipe on the card
+// Swipe op de kaart (niet op knoppen)
 let dragging=false, startX=0, dx=0;
 cardEl.addEventListener('pointerdown', e=>{
-  // vermijd drag als je op een knop klikt
   if(e.target.closest('button')) return;
   dragging=true; startX=e.clientX; dx=0;
 });
