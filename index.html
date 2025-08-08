@@ -182,7 +182,6 @@ const COUNTRIES = [
 ];
 
 /* ---- Eenvoudige kleur-tags per land (dominante vlagkleuren) ---- */
-/* NB: niet perfect-wetenschappelijk; genoeg voor leuke “look-alike” matchups. */
 const COLORS = {
   NL:['red','white','blue'], BE:['black','yellow','red'], DE:['black','red','yellow'],
   FR:['blue','white','red'], ES:['red','yellow'], IT:['green','white','red'], PT:['green','red','yellow'],
@@ -234,7 +233,7 @@ function similarCountries(iso){
   if(base.length===0) return [];
   return COUNTRIES.filter(c=>{
     if(c.iso===iso) return false;
-    const tags = COLORS[c.iso] || [];
+    const tags = (COLORS[c.iso] || []);
     return tags.some(t => base.includes(t));
   });
 }
@@ -387,9 +386,7 @@ cardEl.addEventListener('pointerup', ()=>{
 });
 
 /* ---- Start & Gate ---- */
-const startOverlay = document.getElementById('startOverlay');
-const startBtn = document.getElementById('startBtn');
-const gateBtn = document.getElementById('gateBtn');
+// Alleen listeners – geen dubbele consts meer:
 startBtn.addEventListener('click', ()=>{
   startOverlay.style.display='none';
   updateGauge();
