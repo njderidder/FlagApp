@@ -12,7 +12,7 @@
     --bg1:#f6f8fb; --bg2:#eef2f7;
     --card:#ffffff; --ink:#0b1f17; --muted:#6b7f76;
     --btn-ink:#ffffff; --btn-ring:#2dd4bf55;
-    --glass-stroke:#cfe0d8; --glass-fill1:#b5f0c6; --glass-fill2:#4cd186;
+    --glass-stroke:#cfe0d8; --glass-fill1:#ffe08a; --glass-fill2:#d4a017; /* bierkleur */
     --radius:18px; --ease:cubic-bezier(.2,.8,.2,1);
   }
 
@@ -46,7 +46,7 @@
   .glasses-wrap{
     display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;
     min-height:72px;
-    justify-content:center; /* centreren van glazen */
+    justify-content:center; /* gecentreerd, ook bij meerdere rijen */
   }
   .glass{
     position:relative; width:30px; height:64px; border-radius:8px;
@@ -57,7 +57,7 @@
   .glass .fill{
     position:absolute; left:4px; right:4px; bottom:4px; height:0%;
     border-radius:6px;
-    background:linear-gradient(180deg,var(--glass-fill1),var(--glass-fill2) 70%,#22a65c);
+    background:linear-gradient(180deg,var(--glass-fill1),var(--glass-fill2) 70%,#8b5a00);
     transition:height .25s var(--ease);
   }
   .streak{font-weight:800; color:var(--muted); padding-bottom:4px}
@@ -85,26 +85,16 @@
   }
   .btn{
     appearance:none; border:1px solid var(--btn-ring);
-    background:linear-gradient(180deg,#06b6d4,#0b1324);
+    background:linear-gradient(180deg,#06b6d4,#0b1324); /* cyaan -> zwart */
     color:var(--btn-ink);
     padding:16px 20px; border-radius:16px; font-weight:800; font-size:18px;
     min-width:240px; cursor:pointer; letter-spacing:.2px;
-    box-shadow:
-      0 1px 0 #ffffff10 inset,
-      0 10px 30px rgba(0,0,0,.10),
-      0 0 0 0 rgba(34,211,238,.0);
-    transition:
-      transform .08s var(--ease),
-      box-shadow .15s var(--ease),
-      border-color .15s var(--ease),
-      filter .15s var(--ease);
+    box-shadow:0 1px 0 #ffffff10 inset,0 10px 30px rgba(0,0,0,.10);
+    transition:transform .08s var(--ease), box-shadow .15s var(--ease), border-color .15s var(--ease), filter .15s var(--ease);
   }
   .btn:hover{
     transform:translateY(-1px);
-    box-shadow:
-      0 1px 0 #ffffff10 inset,
-      0 14px 38px rgba(0,0,0,.14),
-      0 0 0 4px rgba(34,211,238,.20);
+    box-shadow:0 1px 0 #ffffff10 inset,0 14px 38px rgba(0,0,0,.14),0 0 0 4px rgba(34,211,238,.20);
     filter:saturate(110%);
     border-color:#22d3eeaa;
   }
@@ -165,7 +155,7 @@
   <button class="cta" id="startBtn">Start</button>
 </div>
 
-<!-- Fail overlay -->
+<!-- Fail overlay (blijft staan tot klik/tap) -->
 <div class="fail-stage" id="failStage">
   <div class="fail-box">
     <div class="fail-pair" id="failPair"></div>
@@ -250,7 +240,10 @@ function rememberMainISO(iso){
 function rand(n){ return Math.floor(Math.random()*n); }
 function sample(arr){ return arr[arr.length ? rand(arr.length) : 0]; }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rand(i+1); [a[i],a[j]]=[a[j],a[i]]; } }
-function isoToFlag(iso){ const cc = iso.toUpperCase(); return String.fromCodePoint(...[...cc].map(c=>0x1F1E6 + (c.charCodeAt(0)-65))); }
+function isoToFlag(iso){
+  const cc = iso.toUpperCase();
+  return String.fromCodePoint(...[...cc].map(c=>0x1F1E6 + (c.charCodeAt(0)-65)));
+}
 
 /* Bepaal kandidaten met overlappende colortags */
 function similarCountries(iso){
@@ -367,6 +360,10 @@ function answer(side){
 /* ---- Interactions ---- */
 leftBtn.addEventListener('click', ()=>answer('left'));
 rightBtn.addEventListener('click', ()=>answer('right'));
+window.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft') answer('left');
+  if(e.key==='ArrowRight') answer('right');
+});
 
 /* ---- Start & Gate ---- */
 startBtn.addEventListener('click', ()=>{
